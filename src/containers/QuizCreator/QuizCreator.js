@@ -6,6 +6,7 @@ import Select from '../../components/UI/Select/Select'
 // фреймворк для валидации формы
 import { createControl, validate, validateForm } from '../../form/formFramework'
 import Auxiliary from '../../hoc/Auxiliary/Auxiliary'
+import axios from '../../axios/axios-quiz'
 
 // возвращает функцию фреймворк для валидации
 function createOptionControl(number) {
@@ -97,11 +98,40 @@ export default class QuizCreator extends Component {
       formControls: createFormControls(),
     })
   }
-  createQuizHandler = (event) => {
+  // отправляем тест в бд, (при стреллочной функции async пишем перед параметрами при обычнычном синтаксесе перед названием функции)
+  createQuizHandler = async (event) => {
     event.preventDefault()
 
-    console.log(this.state.quiz)
-    //TODO: Server
+    // более удобный способ отправки данных на сервер
+
+    try {
+      await axios.post(
+        // дописываем расширение .json
+        '/quizes.json',
+        this.state.quiz
+      )
+
+      // после записи вопроса в базу обнуляем state для следущих вопросов
+      this.setState({
+        quiz: [],
+        isFormValid: false,
+        rightAnswerId: 1,
+        formControls: createFormControls(),
+      })
+    } catch (e) {
+      console.log(e)
+    }
+
+    // отправляем созданый тест на сервер старым способом
+    // axios
+    //   .post(
+    //     'https://react-quiz-888c7-default-rtdb.firebaseio.com/quizes.json',
+    //     this.state.quiz
+    //   )
+    //   .then((response) => {
+    //     console.log(response)
+    //   })
+    //   .catch((error) => console.log(error))
   }
   changeHandler = (value, controlName) => {
     //копируем обьект формКонтрол чтоб не было мутации
