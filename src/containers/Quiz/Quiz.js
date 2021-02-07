@@ -1,122 +1,21 @@
-import React, { Component } from 'react'
-import classes from './Quiz.module.css'
+import React, {Component} from 'react'
+import classes from './Quiz.css'
 import ActiveQuiz from '../../components/ActiveQuiz/ActiveQuiz'
 import FinishedQuiz from '../../components/FinishedQuiz/FinishedQuiz'
 import Loader from '../../components/UI/Loader/Loader'
-import axios from '../../axios/axios-quiz'
+import {connect} from 'react-redux'
+import {fetchQuizById, quizAnswerClick, retryQuiz} from '../../store/actions/quiz'
 
 class Quiz extends Component {
-  state = {
-    results: {}, // { [id]: 'success' 'error'}
-    isFinished: false,
-    activeQuestion: 0,
-    answerState: null, // { [id]: 'success' 'error'}
-    quiz: [
-      // {
-      //   question: 'Какого цвета небо',
-      //   rightAnswerId: 2,
-      //   id: 1,
-      //   answers: [
-      //     { text: 'Черный', id: 1 },
-      //     { text: 'Синий', id: 2 },
-      //     { text: 'Красный', id: 3 },
-      //     { text: 'Зеленый', id: 4 },
-      //   ],
-      // },
-      // {
-      //   question: 'В каком году основали Киев?',
-      //   rightAnswerId: 2,
-      //   id: 2,
-      //   answers: [
-      //     { text: '482', id: 1 },
-      //     { text: '430', id: 2 },
-      //     { text: '1002', id: 3 },
-      //     { text: '803', id: 4 },
-      //   ],
-      // },
-    ],
-    loading: true,
+
+  componentDidMount() {
+    this.props.fetchQuizById(this.props.match.params.id)
   }
 
-  // передает id правильного ответа при клике, переключает вопросы при правильном ответе
-  onAnswerClickHandler = (answerId) => {
-    // при двойном клике не дает перескачить через вопрос
-    if (this.state.answerState) {
-      const key = Object.keys(this.state.answerState)[0]
-      if (this.state.answerState[key] === 'success') {
-        return
-      }
-    }
-
-    const question = this.state.quiz[this.state.activeQuestion]
-    const results = this.state.results
-
-    // если ответ равен правельному
-    if (question.rightAnswerId === answerId) {
-      // если ответили правильно и по ключю нету error
-      if (!results[question.id]) {
-        results[question.id] = 'success'
-      }
-      this.setState({
-        answerState: { [answerId]: 'success' },
-        results,
-      })
-
-      const timeout = window.setTimeout(() => {
-        // если вопросы закончились
-        if (this.isQuizFinished()) {
-          this.setState({ isFinished: true })
-        } else {
-          // если не закончились переключаем на следущий и обнуляем обьект стилей
-          this.setState({
-            activeQuestion: this.state.activeQuestion + 1,
-            answerState: null,
-          })
-        }
-        window.clearTimeout(timeout)
-      }, 1000)
-    } else {
-      //если ответили не правильно
-      results[question.id] = 'error'
-      this.setState({
-        answerState: { [answerId]: 'error' },
-        results,
-      })
-    }
-  }
-
-  // возвращает true если голосование закончилось
-  isQuizFinished() {
-    return this.state.activeQuestion + 1 === this.state.quiz.length
-  }
-
-  // обнуляет state и запускает тесты заново
-  retryHandler = () => {
-    this.setState({
-      activeQuestion: 0,
-      answerState: null,
-      isFinished: false,
-      results: {},
-    })
-  }
-  async componentDidMount() {
-    try {
-      const response = await axios.get(
-        `/quizes/${this.props.match.params.id}.json`
-      ) // id url
-
-      // присваиваем результат запроса копии массива в state
-      const quiz = response.data
-
-      // изменяем state
-      this.setState({
-        quiz,
-        loading: false,
-      })
-    } catch (error) {
-      console.log(error)
-    }
-    // console.log('Quiz id', this.props.match.params.id)
+  // вызываеться когда компонент уничтожаеться
+  componentWillUnmount() {
+    // обнуляет стейт когда закрывем тест
+    this.props.retryQuiz()
   }
 
   render() {
@@ -125,28 +24,51 @@ class Quiz extends Component {
         <div className={classes.QuizWrapper}>
           <h1>Ответьте на все вопросы</h1>
 
-          {this.state.loading ? ( //Если ответ еще не загрузился показываем Loader или компонент
-            <Loader />
-          ) : this.state.isFinished ? ( // Если вопросы закончились Finished если нет показываем
-            <FinishedQuiz
-              results={this.state.results}
-              quiz={this.state.quiz}
-              onRetry={this.retryHandler}
-            />
-          ) : (
-            <ActiveQuiz
-              answers={this.state.quiz[this.state.activeQuestion].answers}
-              question={this.state.quiz[this.state.activeQuestion].question}
-              onAnswerClick={this.onAnswerClickHandler}
-              quizLength={this.state.quiz.length}
-              answerNumber={this.state.activeQuestion + 1}
-              state={this.state.answerState}
-            />
-          )}
+          {
+            this.props.loading || !this.props.quiz
+             ? <Loader /> ////Если ответ еще не загрузился показываем Loader или компонент
+             : this.props.isFinished // Если вопросы закончились Finished если нет показываем
+              ? <FinishedQuiz
+                results={this.props.results}
+                quiz={this.props.quiz}
+                onRetry={this.props.retryQuiz}
+              />
+              : <ActiveQuiz
+                answers={this.props.quiz[this.props.activeQuestion].answers}
+                question={this.props.quiz[this.props.activeQuestion].question}
+                onAnswerClick={this.props.quizAnswerClick}
+                quizLength={this.props.quiz.length}
+                answerNumber={this.props.activeQuestion + 1}
+                state={this.props.answerState}
+              />
+
+          }
         </div>
       </div>
     )
   }
 }
 
-export default Quiz
+function mapStateToProps(state) {
+  return {
+    // параметры начального состояния стейта
+    results: state.quiz.results,
+    isFinished: state.quiz.isFinished,
+    activeQuestion: state.quiz.activeQuestion,
+    answerState: state.quiz.answerState,
+    quiz: state.quiz.quiz,
+    loading: state.quiz.loading
+  }
+}
+
+function mapDispatchToProps(dispatch) {
+  // методы для реализации данной страницы
+  return {
+    fetchQuizById: id => dispatch(fetchQuizById(id)),
+    quizAnswerClick: answerId => dispatch(quizAnswerClick(answerId)),
+    // обнуляет стейт
+    retryQuiz: () => dispatch(retryQuiz())
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Quiz)
