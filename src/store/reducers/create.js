@@ -1,4 +1,4 @@
-import {CREATE_QUIZ_QUESTION, RESET_QUIZ_CREATION} from '../actions/actionTypes'
+import {AUTH_LOGOUT, CREATE_QUIZ_QUESTION, RESET_QUIZ_CREATION} from '../actions/actionTypes'
 
 const initialState = {
   quiz: []
@@ -14,6 +14,10 @@ export default function createReducer(state = initialState, action) {
     case RESET_QUIZ_CREATION:
       return {
         ...state, quiz: []
+      }
+    case AUTH_LOGOUT:
+      return {
+        ...state, token: null
       }
     default:
       return state

@@ -1,13 +1,16 @@
+// создание нового теста
 import React, {Component} from 'react'
 import classes from './QuizCreator.css'
 import Button from '../../components/UI/Button/Button'
 import Input from '../../components/UI/Input/Input'
 import Select from '../../components/UI/Select/Select'
+// фреймворк для валидации формы
 import {createControl, validate, validateForm} from '../../form/formFramework'
 import Auxiliary from '../../hoc/Auxiliary/Auxiliary'
 import {connect} from 'react-redux';
 import {createQuizQuestion, finishCreateQuiz} from '../../store/actions/create';
 
+// возвращает функцию фреймворк для валидации
 function createOptionControl(number) {
   return createControl({
     label: `Вариант ${number}`,
@@ -31,12 +34,14 @@ function createFormControls() {
 
 class QuizCreator extends Component {
 
+  // сформированные вопросы
   state = {
     isFormValid: false,
     rightAnswerId: 1,
     formControls: createFormControls()
   }
 
+  // функция добавляет новый вопрос
   sibmitHandler = event => {
     event.preventDefault()
   }
@@ -46,6 +51,7 @@ class QuizCreator extends Component {
 
     const {question, option1, option2, option3, option4} = this.state.formControls
 
+    // создаем обьект с параметрами вопроса
     const questionItem = {
       question: question.value,
       id: this.props.quiz.length + 1,
@@ -60,6 +66,7 @@ class QuizCreator extends Component {
 
     this.props.createQuizQuestion(questionItem)
 
+    //добавляем в стейт новый вопрос и обновляем страницу с инпутами
     this.setState({
       isFormValid: false,
       rightAnswerId: 1,
@@ -67,6 +74,7 @@ class QuizCreator extends Component {
     })
   }
 
+  // отправляем тест в бд, (при стреллочной функции async пишем перед параметрами при обычнычном синтаксесе перед названием функции)
   createQuizHandler = event => {
     event.preventDefault()
 
@@ -176,10 +184,11 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return {
+    // функции которые используються в даном компоненте
     createQuizQuestion: item => dispatch(createQuizQuestion(item)),
     finishCreateQuiz: () => dispatch(finishCreateQuiz())
   }
 }
 
-
+// соединяем компонент с редаксом
 export default connect(mapStateToProps, mapDispatchToProps)(QuizCreator)

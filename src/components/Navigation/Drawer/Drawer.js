@@ -3,17 +3,12 @@ import classes from './Drawer.module.css'
 import { NavLink } from 'react-router-dom'
 import Backdrop from '../../UI/Backdrop/Backdrop'
 
-const links = [
-  { to: '/', label: 'Список', exact: true },
-  { to: '/auth', label: 'Авторизация', exact: false },
-  { to: '/quiz-creator', label: 'Создать тест', exact: false },
-]
 
 class Drawer extends Component {
   clickHandler = () => {
     this.props.onClose()
   }
-  renderLinks() {
+  renderLinks(links) {
     return links.map((link, index) => {
       return (
         <li key={index}>
@@ -34,11 +29,26 @@ class Drawer extends Component {
     if (!this.props.isOpen) {
       cls.push(classes.close)
     }
+    // генерируем набор ссылок
+  const links = [
+    { to: '/', label: 'Список', exact: true },
+  ]
+
+    // если пользователь вошол добавляем другие поля
+    if(this.props.isAuthenticated) {
+      // ссылка на генерацию нового теста
+      links.push({ to: '/quiz-creator', label: 'Создать тест', exact: false })
+      // ссылка выйти
+      links.push({ to: '/logout', label: 'Выйти', exact: false })
+    } else {
+      // если еще не зарегистрированы в системе, добавляем ссылку на регистрацию
+      links.push({ to: '/auth', label: 'Авторизация', exact: false })
+    }
     // если боковое меню isOpen отткрыто выводим затемнение <Backdrop />
     return (
       <React.Fragment>
         <nav className={cls.join(' ')}>
-          <ul>{this.renderLinks()}</ul>
+          <ul>{this.renderLinks(links)}</ul>
         </nav>
         {this.props.isOpen ? <Backdrop onClick={this.props.onClose} /> : null}
       </React.Fragment>
